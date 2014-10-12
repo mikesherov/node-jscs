@@ -125,4 +125,47 @@ describe('modules/string-checker', function() {
             assert(errors2.length === 0);
         });
     });
+
+    describe('esprima version', function() {
+        var customDescription = 'in no way a real error message';
+
+        it('uses a custom esprima when provided to the constructor', function() {
+            var customEsprima = {
+                parse: function() {
+                    var error = new Error();
+                    error.description = customDescription;
+
+                    throw error;
+                }
+            };
+
+            checker = new Checker(false, customEsprima);
+            checker.registerDefaultRules();
+
+            var errors = checker.checkString('import { foo } from "bar";');
+            var error = errors.getErrorList()[0];
+
+            assert(error.rule === 'parseError');
+            assert(error.message === customDescription);
+        });
+
+        it('uses the harmony esprima when true is provided to the constructor', function() {
+            checker = new Checker(false, true);
+            checker.registerDefaultRules();
+
+            var errors = checker.checkString('import { foo } from "bar";');
+            assert(errors.isEmpty());
+        });
+
+        it('uses the default esprima when falsely or no argument is provided to the constructor', function() {
+            checker = new Checker();
+            checker.registerDefaultRules();
+
+            var errors = checker.checkString('import { foo } from "bar";');
+            var error = errors.getErrorList()[0];
+
+            assert(error.rule === 'parseError');
+            assert(error.message !== customDescription);
+        });
+    });
 });
